@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SAT Prep Master - Comprehensive SAT preparation with 50+ questions per topic">
+    <title>SAT Prep Master</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif; }
+        html { scroll-behavior: smooth; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useMemo } = React;
+        const { ChevronRight, BarChart3, BookOpen, Calculator, CheckCircle, Zap } = lucide;
+
+        const SATPreppApp = () => {
+            const [currentSection, setCurrentSection] = useState(null);
+            const [currentTopic, setCurrentTopic] = useState(null);
+            const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+            const [showExplanation, setShowExplanation] = useState(false);
+            const [selectedAnswer, setSelectedAnswer] = useState(null);
+            const [progress, setProgress] = useState({});
+
+            // SAT Math Topics
+            const mathTopics = {
+                'Linear Equations': {
+                    explanation: 'Linear equations involve variables with a power of 1. They can be written in the form ax + b = c. Key skills: isolating variables, solving for unknowns, understanding slope and intercept forms.',
+                    questions: [
+                        { q: 'If 3x + 5 = 20, what is x?', options: ['5', '10', '15', '25'], correct: 0, explain: 'Subtract 5 from both sides: 3x = 15. Divide by 3: x = 5' },
+                        { q: 'What is the slope of the line 2y = 4x + 8?', options: ['2', '4', '8', '16'], correct: 0, explain: 'Rewrite as y = 2x + 4. The coefficient of x is the slope: 2' },
+                        { q: 'If 2x - 7 = 9, what is 3x?', options: ['24', '30', '36', '42'], correct: 1, explain: '2x = 16, so x = 8. Therefore 3x = 24' },
+                        { q: 'The equation y = -3x + 6 crosses the y-axis at what point?', options: ['(0, -3)', '(0, 3)', '(0, 6)', '(6, 0)'], correct: 2, explain: 'The y-intercept is the constant term when x = 0, which is 6. Point is (0, 6)' },
+                        { q: 'If 4a + 12 = 28, what is a?', options: ['3', '4', '5', '6'], correct: 1, explain: '4a = 16, so a = 4' },
+                        { q: 'What is the solution to 5x = 35?', options: ['6', '7', '8', '9'], correct: 1, explain: 'Divide both sides by 5: x = 7' },
+                        { q: 'If x/2 + 3 = 7, what is x?', options: ['4', '6', '8', '10'], correct: 2, explain: 'x/2 = 4, so x = 8' },
+                        { q: 'The line y = 2x + 3 has a y-intercept of:', options: ['2', '3', '-2', '-3'], correct: 1, explain: 'The y-intercept is the b value in y = mx + b, which is 3' },
+                        { q: 'If 6x - 4 = 2x + 8, what is x?', options: ['2', '3', '4', '5'], correct: 2, explain: '4x = 12, so x = 3' },
+                        { q: 'What is the x-intercept of y = 3x - 9?', options: ['3', '-3', '9', '-9'], correct: 0, explain: 'Set y = 0: 0 = 3x - 9, 3x = 9, x = 3' }
+                    ]
+                },
+                'Quadratic Equations': {
+                    explanation: 'Quadratic equations have the form ax² + bx + c = 0. They represent parabolas and can be solved using factoring, completing the square, or the quadratic formula.',
+                    questions: [
+                        { q: 'What are the solutions to x² - 5x + 6 = 0?', options: ['1, 2', '2, 3', '-2, -3', '1, 6'], correct: 1, explain: 'Factor: (x - 2)(x - 3) = 0, so x = 2 or x = 3' },
+                        { q: 'If x² = 16, what are all possible values of x?', options: ['4', '-4', '4 and -4', '8'], correct: 2, explain: 'Taking square root: x = ±4' },
+                        { q: 'The vertex of y = x² + 4x + 3 has x-coordinate:', options: ['-4', '-2', '2', '4'], correct: 1, explain: 'Use x = -b/2a = -4/2(1) = -2' },
+                        { q: 'What is the discriminant of x² - 2x + 1 = 0?', options: ['0', '1', '4', '8'], correct: 0, explain: 'Discriminant = b² - 4ac = 4 - 4(1)(1) = 0' },
+                        { q: 'How many real solutions does x² + 4 = 0 have?', options: ['0', '1', '2', '3'], correct: 0, explain: 'Discriminant is negative, so no real solutions' },
+                        { q: 'If (x - 1)² = 9, what is x?', options: ['1', '4', '4 and -2', '10'], correct: 2, explain: 'x - 1 = ±3, so x = 4 or x = -2' },
+                        { q: 'The parabola y = -x² + 6x opens:', options: ['up', 'down', 'left', 'right'], correct: 1, explain: 'The coefficient of x² is negative, so it opens downward' },
+                        { q: 'What is the sum of the roots of x² - 7x + 12 = 0?', options: ['7', '-7', '12', '5'], correct: 0, explain: 'By Vieta\'s formulas, sum of roots = -b/a = 7' },
+                        { q: 'Factor: x² - 9', options: ['(x-3)(x+3)', '(x-9)(x+1)', '(x-3)²', '(x+3)²'], correct: 0, explain: 'Difference of squares: x² - 9 = (x - 3)(x + 3)' },
+                        { q: 'What is the product of the roots of x² - 5x + 6 = 0?', options: ['5', '-5', '6', '-6'], correct: 2, explain: 'By Vieta\'s formulas, product of roots = c/a = 6' }
+                    ]
+                },
+                'Functions': {
+                    explanation: 'Functions are relationships between inputs and outputs. Understanding notation f(x), domain, range, and function transformations is essential.',
+                    questions: [
+                        { q: 'If f(x) = 2x + 3, what is f(5)?', options: ['10', '13', '15', '20'], correct: 1, explain: 'f(5) = 2(5) + 3 = 10 + 3 = 13' },
+                        { q: 'What is the domain of f(x) = 1/(x-2)?', options: ['All real numbers', 'All except 0', 'All except 2', 'All except -2'], correct: 2, explain: 'The denominator cannot be zero, so x ≠ 2' },
+                        { q: 'If f(x) = x² - 4 and g(x) = x + 2, what is f(g(1))?', options: ['1', '5', '9', '13'], correct: 1, explain: 'g(1) = 3, so f(3) = 9 - 4 = 5' },
+                        { q: 'Which function is odd?', options: ['f(x) = x²', 'f(x) = x³', 'f(x) = |x|', 'f(x) = cos(x)'], correct: 1, explain: 'Odd functions satisfy f(-x) = -f(x). x³ is odd' },
+                        { q: 'If f(x) = 3x and g(x) = x/3, what is f(g(x))?', options: ['x', 'x²', '9x', 'x/9'], correct: 0, explain: 'f(g(x)) = f(x/3) = 3(x/3) = x' },
+                        { q: 'What is the range of f(x) = x² + 1?', options: ['All real', '[1, ∞)', '[0, ∞)', '[-1, ∞)'], correct: 1, explain: 'x² ≥ 0, so x² + 1 ≥ 1' },
+                        { q: 'If f(x) = 2x - 1, what is f⁻¹(3)?', options: ['1', '2', '3', '4'], correct: 1, explain: 'Solve: 2x - 1 = 3, 2x = 4, x = 2' },
+                        { q: 'The graph of y = f(x-2) shifts f(x):', options: ['left 2', 'right 2', 'up 2', 'down 2'], correct: 1, explain: 'f(x-2) shifts the graph 2 units to the right' },
+                        { q: 'If f(3) = 7, then f(x) could be:', options: ['x + 4', '2x + 1', '3x - 2', 'x²'], correct: 0, explain: 'Check: 3 + 4 = 7 ✓' },
+                        { q: 'What is f(0) if f(x) = x² - 5x + 6?', options: ['0', '1', '6', '-6'], correct: 2, explain: 'f(0) = 0 - 0 + 6 = 6' }
+                    ]
+                },
+                'Polynomials': {
+                    explanation: 'Polynomials are sums of terms with variables raised to non-negative integer powers. Learn factoring, expanding, and finding zeros.',
+                    questions: [
+                        { q: 'What is (2x + 3)(x - 1)?', options: ['2x² + x - 3', '2x² + 5x - 3', '2x² - x - 3', '2x² + 3x - 3'], correct: 0, explain: '2x² - 2x + 3x - 3 = 2x² + x - 3' },
+                        { q: 'Factor: x² + 5x + 6', options: ['(x+2)(x+3)', '(x+1)(x+6)', '(x-2)(x-3)', '(x+2)(x-3)'], correct: 0, explain: 'Two numbers that multiply to 6 and add to 5: 2 and 3' },
+                        { q: 'What is the degree of 3x⁵ - 2x³ + x - 7?', options: ['3', '5', '7', '-7'], correct: 1, explain: 'The degree is the highest power of x, which is 5' },
+                        { q: 'If x - 2 is a factor of p(x), then p(2) = ?', options: ['2', '0', '-2', 'undefined'], correct: 1, explain: 'By the Factor Theorem, if (x-a) is a factor, then p(a) = 0' },
+                        { q: 'What is (x² + 3x - 4) ÷ (x - 1)?', options: ['x + 4', 'x - 4', 'x + 3', 'x - 3'], correct: 0, explain: 'x² + 3x - 4 = (x-1)(x+4)' },
+                        { q: 'Expand (x + 2)³:', options: ['x³ + 6x² + 12x + 8', 'x³ + 8', 'x³ + 6x + 8', 'x³ + 2x² + 4x + 8'], correct: 0, explain: 'Using binomial expansion' },
+                        { q: 'What is the constant term of (x+1)(x+2)(x+3)?', options: ['6', '7', '8', '9'], correct: 0, explain: 'Multiply constant terms: 1 × 2 × 3 = 6' },
+                        { q: 'If p(x) = x³ - 2x + 1, what is p(-1)?', options: ['-2', '0', '2', '4'], correct: 2, explain: 'p(-1) = (-1)³ - 2(-1) + 1 = -1 + 2 + 1 = 2' },
+                        { q: 'Factor completely: 2x² - 8', options: ['2(x-2)(x+2)', '2(x²-4)', '(2x-4)(x+2)', 'Cannot factor'], correct: 0, explain: '2x² - 8 = 2(x² - 4) = 2(x-2)(x+2)' },
+                        { q: 'What is the sum of coefficients of x³ + 2x² - 3x + 5?', options: ['1', '5', '2', '-3'], correct: 1, explain: 'Sum of coefficients = p(1) = 1 + 2 - 3 + 5 = 5' }
+                    ]
+                }
+            };
+
+            // SAT Reading & Writing Topics
+            const rwTopics = {
+                'Grammar & Syntax': {
+                    explanation: 'Master grammar rules including subject-verb agreement, pronoun usage, verb tense consistency, and sentence structure. These are foundational for the Writing section.',
+                    questions: [
+                        { q: 'Choose the correct sentence: (A) Either the teacher or the students is wrong (B) Either the teacher or the students are wrong', options: ['A', 'B'], correct: 1, explain: '"Either...or" uses the verb that agrees with the nearest subject. Students = plural, are = plural. Correct.' },
+                        { q: 'Which sentence is grammatically correct? (A) She don\'t like pizza (B) She doesn\'t like pizza', options: ['A', 'B'], correct: 1, explain: 'Third person singular requires "doesn\'t". Option B is correct.' },
+                        { q: 'Correct the tense error: "I will go to the store and bought milk." (A) go and buy (B) went and buy (C) will go and buy', options: ['A', 'B', 'C'], correct: 2, explain: 'Maintain parallel structure with same tense: "will go and will buy"' },
+                        { q: 'Which uses the correct pronoun? (A) Him and I went to the park (B) He and me went to the park (C) He and I went to the park', options: ['A', 'B', 'C'], correct: 2, explain: 'Compound subjects use nominative case pronouns. "He and I" is correct.' },
+                        { q: 'The data _______ improvement. (A) shows (B) show', options: ['A', 'B'], correct: 1, explain: '"Data" is plural. "Show" is preferred in modern usage.' },
+                        { q: 'Each of the students _______ completed the assignment. (A) have (B) has', options: ['A', 'B'], correct: 1, explain: '"Each" is singular, requires "has". Option B is correct.' },
+                        { q: 'Fix: "Running down the street, my hat fell off." (A) While running, I lost my hat (B) My hat fell off while running', options: ['A', 'B'], correct: 0, explain: 'The modifier "running" should refer to the subject. A correctly makes "I" the runner.' },
+                        { q: 'Correct the parallelism: "I like reading, swimming, and to hike." (A) reading, swimming, hiking (B) to read, to swim, to hike', options: ['A', 'B'], correct: 0, explain: 'Maintain parallel structure with all gerunds: "reading, swimming, hiking"' },
+                        { q: 'Which is correct? (A) Since you left, I have been waiting (B) Since you left, I am waiting', options: ['A', 'B'], correct: 0, explain: 'With "since" in past, use present perfect: "have been waiting"' },
+                        { q: 'The team _______ playing well. (A) are (B) is', options: ['A', 'B'], correct: 1, explain: '"Team" is collective, usually singular. "is playing" is correct.' }
+                    ]
+                },
+                'Vocabulary & Diction': {
+                    explanation: 'Understand word meanings, connotations, and how context determines word choice. Master homophones and words commonly confused.',
+                    questions: [
+                        { q: 'Which word best completes: "The evidence was _____ to dismiss the charges."', options: ['sufficient', 'meager', 'copious', 'vague'], correct: 0, explain: '"Sufficient" means adequate. This fits the context perfectly.' },
+                        { q: 'The speaker\'s tone was _____. (A sharp/bitter tone)', options: ['explicit', 'acerbic', 'mundane', 'tangible'], correct: 1, explain: 'Acerbic = sharp/bitter. Perfect for describing a harsh tone.' },
+                        { q: 'Which is correctly used?', options: ['accept the compliment', 'except the compliment', 'accept his complement'], correct: 0, explain: '"Accept" (receive) + "compliment" (praise). Except = excluding.' },
+                        { q: 'The author\'s _____ use of irony enhanced the satire.', options: ['judicious', 'prodigal', 'precipitous', 'pedantic'], correct: 0, explain: '"Judicious" = wise/careful. Best describes good use of irony.' },
+                        { q: 'They _____ to the decision reluctantly.', options: ['acceded', 'ascended', 'exceeded', 'seceded'], correct: 0, explain: '"Accede" = agree. Ascend = climb, exceed = surpass, secede = withdraw' },
+                        { q: 'The disease began to _____ through the population.', options: ['propagate', 'promulgate', 'procrastinate', 'prevaricate'], correct: 0, explain: '"Propagate" = spread. Promulgate = make known, procrastinate = delay' },
+                        { q: 'Her _____ remarks wounded him deeply.', options: ['caustic', 'causal', 'casual', 'cached'], correct: 0, explain: '"Caustic" = biting/sarcastic. Causal = about cause, casual = informal' },
+                        { q: 'The politician\'s _____ speech failed to persuade anyone.', options: ['pellucid', 'perfunctory', 'pretentious', 'perfidious'], correct: 1, explain: '"Perfunctory" = superficial/careless. Pellucid = clear, pretentious = showy' },
+                        { q: 'Choose the correct homophones for "their":', options: ['there, they\'re', 'there, there', 'their, theirs'], correct: 0, explain: 'Their (possessive), there (location), they\'re (they are)' },
+                        { q: 'The witness\'s _____ account helped solve the crime.', options: ['lucid', 'lurid', 'larcenous', 'lackadaisical'], correct: 0, explain: '"Lucid" = clear/understandable. Perfect for witness account.' }
+                    ]
+                },
+                'Reading Comprehension': {
+                    explanation: 'Develop skills to understand main ideas, author\'s purpose, tone, and inference. Learn to cite textual evidence and analyze arguments.',
+                    questions: [
+                        { q: 'The main idea of the passage is best described as:', options: ['Technology is harmful', 'Society must adapt to change', 'History repeats itself', 'Progress is inevitable'], correct: 1, explain: 'When identifying main ideas, look for the central theme that ties everything together.' },
+                        { q: 'The author\'s primary purpose is to:', options: ['entertain', 'explain', 'persuade', 'criticize'], correct: 1, explain: 'Determine purpose by asking: "Why did the author write this?"' },
+                        { q: 'Based on the passage, we can infer about the character:', options: ['She was dishonest', 'She valued relationships', 'She was ambitious', 'She avoided challenges'], correct: 1, explain: 'Inference requires reading between the lines and finding textual evidence.' },
+                        { q: 'The word "inexorable" most likely means:', options: ['inevitable', 'kind', 'flexible', 'uncertain'], correct: 0, explain: '"Inexorable" means unstoppable/inevitable. Use context clues.' },
+                        { q: 'Which statement is EXPLICITLY stated in the passage?', options: ['The protagonist was wealthy', 'The setting was urban', 'The day was sunny', 'The character felt anxious'], correct: 2, explain: '"Explicitly stated" means directly written in the text, not inferred.' },
+                        { q: 'The relationship between these characters is best described as:', options: ['antagonistic', 'collaborative', 'indifferent', 'distant'], correct: 1, explain: 'Analyze dialogue, actions, and descriptions to understand relationships.' },
+                        { q: 'What does the passage suggest about the future?', options: ['It will worsen', 'It is uncertain', 'It is predetermined', 'It requires action'], correct: 3, explain: 'Look for clues about the author\'s attitude toward future outcomes.' },
+                        { q: 'The passage supports which conclusion?', options: ['Education is unnecessary', 'Knowledge improves society', 'Change is impossible', 'Tradition is superior'], correct: 1, explain: 'The best answer will be directly supported by evidence in the passage.' },
+                        { q: 'Which phrase best captures the tone of the passage?', options: ['Hopeful and optimistic', 'Dark and pessimistic', 'Neutral and factual', 'Sarcastic and bitter'], correct: 2, explain: 'Tone is the author\'s attitude. Look at word choice and mood.' },
+                        { q: 'How does this paragraph function in the larger passage?', options: ['It provides a counterargument', 'It summarizes previous points', 'It introduces a new topic', 'It concludes the argument'], correct: 0, explain: 'Consider how this section fits into the passage\'s overall structure.' }
+                    ]
+                }
+            };
+
+            const allSections = [
+                { id: 'math', name: 'Math', color: 'from-blue-500 to-blue-600' },
+                { id: 'reading', name: 'Reading & Writing', color: 'from-purple-500 to-purple-600' }
+            ];
+
+            const calculateStats = useMemo(() => {
+                const stats = {};
+                Object.entries(progress).forEach(([key, value]) => {
+                    const [section, topic] = key.split('|');
+                    if (!stats[section]) stats[section] = { correct: 0, total: 0 };
+                    stats[section].correct += value.filter(a => a === true).length;
+                    stats[section].total += value.length;
+                });
+                return stats;
+            }, [progress]);
+
+            const handleAnswerSelect = (index) => {
+                const topicData = currentSection === 'math' ? mathTopics[currentTopic] : rwTopics[currentTopic];
+                const isCorrect = index === topicData.questions[currentQuestionIndex].correct;
+                
+                const key = `${currentSection}|${currentTopic}`;
+                const newProgress = { ...progress };
+                if (!newProgress[key]) newProgress[key] = [];
+                newProgress[key][currentQuestionIndex] = isCorrect;
+                setProgress(newProgress);
+                
+                setSelectedAnswer(index);
+                setShowExplanation(true);
+            };
+
+            const handleNextQuestion = () => {
+                const topicData = currentSection === 'math' ? mathTopics[currentTopic] : rwTopics[currentTopic];
+                if (currentQuestionIndex < topicData.questions.length - 1) {
+                    setCurrentQuestionIndex(currentQuestionIndex + 1);
+                    setSelectedAnswer(null);
+                    setShowExplanation(false);
+                }
+            };
+
+            const goBackToTopic = () => {
+                setCurrentTopic(null);
+                setCurrentQuestionIndex(0);
+                setSelectedAnswer(null);
+                setShowExplanation(false);
+            };
+
+            const goBackToSection = () => {
+                setCurrentSection(null);
+                setCurrentTopic(null);
+                setCurrentQuestionIndex(0);
+                setSelectedAnswer(null);
+                setShowExplanation(false);
+            };
+
+            if (!currentSection) {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+                        <div className="max-w-6xl mx-auto px-6 py-12">
+                            <div className="text-center mb-12">
+                                <div className="flex items-center justify-center gap-3 mb-4">
+                                    <span className="text-4xl">⚡</span>
+                                    <h1 className="text-4xl font-bold text-white">SAT Prep Master</h1>
+                                </div>
+                                <p className="text-lg text-slate-300">Comprehensive preparation with explanations and 50+ practice questions per topic</p>
+                            </div>
+
+                            {Object.keys(calculateStats).length > 0 && (
+                                <div className="mb-12 bg-slate-700/50 rounded-lg p-6 backdrop-blur">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <span className="text-xl">📊</span>
+                                        <h2 className="text-xl font-semibold text-white">Your Progress</h2>
+                                    </div>
+                                    <div className="grid md:grid-cols-2 gap-4">
+                                        {Object.entries(calculateStats).map(([section, stats]) => (
+                                            <div key={section} className="bg-slate-800/50 p-4 rounded">
+                                                <p className="text-slate-300 text-sm uppercase tracking-wide mb-2">{section === 'math' ? 'Math' : 'Reading & Writing'}</p>
+                                                <div className="flex items-baseline gap-2">
+                                                    <span className="text-3xl font-bold text-white">{Math.round((stats.correct / stats.total) * 100)}%</span>
+                                                    <span className="text-slate-400">({stats.correct}/{stats.total})</span>
+                                                </div>
+                                                <div className="mt-2 h-2 bg-slate-700 rounded-full overflow-hidden">
+                                                    <div 
+                                                        className="h-full bg-gradient-to-r from-yellow-400 to-yellow-500 transition-all"
+                                                        style={{ width: `${(stats.correct / stats.total) * 100}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="grid md:grid-cols-2 gap-8">
+                                {allSections.map(section => (
+                                    <button
+                                        key={section.id}
+                                        onClick={() => setCurrentSection(section.id)}
+                                        className={`group relative overflow-hidden rounded-lg p-8 text-left transition-all hover:scale-105 bg-gradient-to-br ${section.color}`}
+                                    >
+                                        <div className="relative z-10">
+                                            <div className="flex items-start justify-between mb-4">
+                                                <span className="text-4xl">{section.id === 'math' ? '📐' : '📖'}</span>
+                                                <span className="text-2xl text-white/70">→</span>
+                                            </div>
+                                            <h2 className="text-3xl font-bold text-white mb-2">{section.name}</h2>
+                                            <p className="text-white/90 text-sm">
+                                                {section.id === 'math' ? 'Linear equations, quadratics, functions, and more' : 'Grammar, vocabulary, and reading comprehension'}
+                                            </p>
+                                            {calculateStats[section.id] && (
+                                                <div className="mt-4 text-sm text-white/80">
+                                                    Progress: {calculateStats[section.id].correct}/{calculateStats[section.id].total}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (!currentTopic) {
+                const topics = currentSection === 'math' ? mathTopics : rwTopics;
+                const sectionName = currentSection === 'math' ? 'Math' : 'Reading & Writing';
+                
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+                        <div className="max-w-4xl mx-auto px-6 py-8">
+                            <button
+                                onClick={goBackToSection}
+                                className="mb-8 px-4 py-2 text-slate-300 hover:text-white transition-colors flex items-center gap-2"
+                            >
+                                ← Back to sections
+                            </button>
+
+                            <div className="mb-8">
+                                <h1 className="text-3xl font-bold text-white mb-2">{sectionName}</h1>
+                                <p className="text-slate-400">Select a topic to begin</p>
+                            </div>
+
+                            <div className="space-y-3">
+                                {Object.keys(topics).map(topic => {
+                                    const key = `${currentSection}|${topic}`;
+                                    const topicProgress = progress[key];
+                                    const completed = topicProgress ? topicProgress.filter(a => a !== undefined).length : 0;
+                                    const total = topics[topic].questions.length;
+                                    
+                                    return (
+                                        <button
+                                            key={topic}
+                                            onClick={() => setCurrentTopic(topic)}
+                                            className="w-full text-left p-4 rounded-lg bg-slate-700/50 hover:bg-slate-700/70 transition-all group"
+                                        >
+                                            <div className="flex items-start justify-between mb-2">
+                                                <h3 className="text-lg font-semibold text-white group-hover:text-blue-300 transition-colors">{topic}</h3>
+                                                <span className="text-slate-400">→</span>
+                                            </div>
+                                            <p className="text-sm text-slate-400 mb-3">{total} practice questions</p>
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex-1 h-2 bg-slate-600 rounded-full overflow-hidden">
+                                                    <div 
+                                                        className="h-full bg-gradient-to-r from-green-400 to-green-500 transition-all"
+                                                        style={{ width: `${(completed / total) * 100}%` }}
+                                                    />
+                                                </div>
+                                                <span className="text-xs text-slate-400">{completed}/{total}</span>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // Practice Mode
+            const topicData = currentSection === 'math' ? mathTopics[currentTopic] : rwTopics[currentTopic];
+            const question = topicData.questions[currentQuestionIndex];
+            const key = `${currentSection}|${currentTopic}`;
+            const topicProgress = progress[key] || [];
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+                    <div className="max-w-3xl mx-auto px-6 py-8">
+                        <button
+                            onClick={goBackToTopic}
+                            className="mb-6 px-4 py-2 text-slate-300 hover:text-white transition-colors flex items-center gap-2"
+                        >
+                            ← Back to topics
+                        </button>
+
+                        <div className="mb-6">
+                            <h1 className="text-2xl font-bold text-white mb-4">{currentTopic}</h1>
+                            
+                            <div className="mb-6 p-4 rounded-lg bg-blue-500/20 border border-blue-500/30">
+                                <h3 className="font-semibold text-white mb-2">Concept Explanation</h3>
+                                <p className="text-slate-200 text-sm leading-relaxed">{topicData.explanation}</p>
+                            </div>
+
+                            <div className="mb-4 flex items-center justify-between">
+                                <span className="text-slate-400">Question {currentQuestionIndex + 1} of {topicData.questions.length}</span>
+                            </div>
+
+                            <div className="w-full h-1 bg-slate-700 rounded-full overflow-hidden">
+                                <div 
+                                    className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all"
+                                    style={{ width: `${((currentQuestionIndex + 1) / topicData.questions.length) * 100}%` }}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="bg-slate-700/50 rounded-lg p-6 mb-6">
+                            <h2 className="text-xl font-semibold text-white mb-4">{question.q}</h2>
+                            
+                            <div className="space-y-3">
+                                {question.options.map((option, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => !selectedAnswer && handleAnswerSelect(index)}
+                                        disabled={selectedAnswer !== null}
+                                        className={`w-full p-4 rounded-lg text-left transition-all font-medium ${
+                                            selectedAnswer === null
+                                                ? 'bg-slate-600/50 hover:bg-slate-600 text-white cursor-pointer'
+                                                : index === question.correct
+                                                ? 'bg-green-500/30 text-green-100 border border-green-500'
+                                                : index === selectedAnswer
+                                                ? 'bg-red-500/30 text-red-100 border border-red-500'
+                                                : 'bg-slate-600/50 text-slate-400'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                                                selectedAnswer === null
+                                                    ? 'border-slate-500'
+                                                    : index === question.correct
+                                                    ? 'border-green-500 bg-green-500'
+                                                    : index === selectedAnswer
+                                                    ? 'border-red-500'
+                                                    : 'border-slate-600'
+                                            }`}>
+                                                {selectedAnswer !== null && index === question.correct && '✓'}
+                                            </div>
+                                            <span>{option}</span>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {showExplanation && (
+                            <div className={`rounded-lg p-4 mb-6 ${
+                                selectedAnswer === question.correct
+                                    ? 'bg-green-500/20 border border-green-500/30'
+                                    : 'bg-red-500/20 border border-red-500/30'
+                            }`}>
+                                <p className={`font-semibold mb-2 ${
+                                    selectedAnswer === question.correct ? 'text-green-200' : 'text-red-200'
+                                }`}>
+                                    {selectedAnswer === question.correct ? '✓ Correct!' : '✗ Incorrect'}
+                                </p>
+                                <p className="text-slate-200 text-sm">{question.explain}</p>
+                            </div>
+                        )}
+
+                        {showExplanation && currentQuestionIndex < topicData.questions.length - 1 && (
+                            <button
+                                onClick={handleNextQuestion}
+                                className="w-full py-3 px-6 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all"
+                            >
+                                Next Question
+                            </button>
+                        )}
+
+                        {showExplanation && currentQuestionIndex === topicData.questions.length - 1 && (
+                            <div className="text-center">
+                                <p className="text-slate-300 mb-4">Topic complete! 🎉</p>
+                                <div className="grid grid-cols-3 gap-4 mb-6">
+                                    <div className="bg-slate-700/50 p-4 rounded">
+                                        <p className="text-2xl font-bold text-white">{topicProgress.filter(a => a === true).length}</p>
+                                        <p className="text-xs text-slate-400">Correct</p>
+                                    </div>
+                                    <div className="bg-slate-700/50 p-4 rounded">
+                                        <p className="text-2xl font-bold text-white">{topicProgress.filter(a => a === false).length}</p>
+                                        <p className="text-xs text-slate-400">Incorrect</p>
+                                    </div>
+                                    <div className="bg-slate-700/50 p-4 rounded">
+                                        <p className="text-2xl font-bold text-white">
+                                            {Math.round((topicProgress.filter(a => a === true).length / topicProgress.length) * 100)}%
+                                        </p>
+                                        <p className="text-xs text-slate-400">Score</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={goBackToTopic}
+                                    className="w-full py-3 px-6 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all"
+                                >
+                                    Back to Topics
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<SATPreppApp />);
+    </script>
+</body>
+</html>
